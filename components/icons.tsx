@@ -39,3 +39,11 @@ export function ArrowRightIcon({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+export function ChevronDownIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8">
+      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

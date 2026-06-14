@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { AgentSummary, StreamEvent } from "@/lib/types";
 import { AgentCard } from "./agent-card";
+import { ChevronDownIcon } from "./icons";
 
 const TOOL_LABELS: Record<string, string> = {
   discover_agents: "Looking through registered agents",
@@ -21,8 +23,7 @@ function collectAgents(events: StreamEvent[]): AgentSummary[] {
 
   for (const event of events) {
     if (event.type !== "tool_result") continue;
-    const result = event.result;
-    const list: AgentSummary[] | undefined = result?.results;
+    const list: AgentSummary[] | undefined = event.result?.results;
     if (!Array.isArray(list)) continue;
 
     for (const agent of list) {
@@ -53,31 +54,69 @@ export function StreamingAnswer({
   const steps = events.filter(
     (e) => e.type === "tool_call" || e.type === "reasoning"
   );
-
   const agents = collectAgents(events);
 
-  return (
-    <div className="mt-8 space-y-6">
-      {steps.length > 0 && (
-        <div className="space-y-2">
-          {steps.map((step, i) => (
-            <div
-              key={i}
-              className="step-in flex items-start gap-3 rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-dim"
-            >
-              <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-              {step.type === "tool_call" ? (
-                <span>{TOOL_LABELS[step.tool] || `Using ${step.tool}`}…</span>
-              ) : (
-                <span className="text-text">{step.content}</span>
-              )}
-            </div>
-          ))}
+  const [expanded, setExpanded] = useState(true);
+  const hasAutoCollapsed = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-          {isStreaming && (
-            <div className="step-in flex items-center gap-2 px-3 py-1 text-sm text-text-dim">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-              Thinking…
+  // Auto-scroll the thinking panel as new steps stream in
+  useEffect(() => {
+    if (expanded && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [events, expanded]);
+
+  // Once the answer is ready, tuck the thinking panel away
+  useEffect(() => {
+    if ((complete || error) && !hasAutoCollapsed.current) {
+      hasAutoCollapsed.current = true;
+      const timeout = setTimeout(() => setExpanded(false), 600);
+      return () => clearTimeout(timeout);
+    }
+  }, [complete, error]);
+
+  const finalAnswer = complete?.response?.trim();
+
+  return (
+    <div className="mt-8 space-y-4 text-left">
+      {steps.length > 0 && (
+        <div className="rounded-lg border border-border bg-surface">
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="flex w-full items-center justify-between px-4 py-2.5 text-sm text-text-dim"
+          >
+            <span className="flex items-center gap-2">
+              {isStreaming && (
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+              )}
+              {isStreaming
+                ? "Thinking…"
+                : `Thought through ${steps.length} step${steps.length === 1 ? "" : "s"}`}
+            </span>
+            <ChevronDownIcon
+              className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {expanded && (
+            <div
+              ref={scrollRef}
+              className="max-h-56 space-y-1.5 overflow-y-auto border-t border-border px-4 py-3"
+            >
+              {steps.map((step, i) => (
+                <div
+                  key={i}
+                  className="step-in flex items-start gap-2.5 text-sm text-text-dim"
+                >
+                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-text-dim" />
+                  {step.type === "tool_call" ? (
+                    <span>{TOOL_LABELS[step.tool] || `Using ${step.tool}`}…</span>
+                  ) : (
+                    <span className="text-text">{step.content}</span>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -89,9 +128,9 @@ export function StreamingAnswer({
         </div>
       )}
 
-      {complete && (
+      {finalAnswer && (
         <div className="step-in rounded-lg border border-border bg-surface p-5">
-          <p className="whitespace-pre-wrap leading-relaxed">{complete.response}</p>
+          <p className="whitespace-pre-wrap leading-relaxed">{finalAnswer}</p>
         </div>
       )}
 
