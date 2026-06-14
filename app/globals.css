@@ -1,4 +1,4 @@
-@import "tailwindcss";
+/* @import "tailwindcss";
 
 :root {
   --background: #ffffff;
@@ -23,4 +23,76 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+} */
+
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0b0e;
+  --color-surface: #14161b;
+  --color-surface-2: #1b1e26;
+  --color-border: #262a33;
+  --color-text: #e9ebef;
+  --color-text-dim: #8b929d;
+
+  --color-accent: #5eead4;
+  --color-accent-strong: #2dd4bf;
+
+  --color-low: #5eead4;
+  --color-moderate: #f3c969;
+  --color-high: #f2718a;
+
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: #0a0b0e;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-2);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+/* soft glow used behind the search bar on the landing page */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 0.6;  transform: scale(1.04); }
+}
+.glow-orb {
+  animation: pulse-glow 6s ease-in-out infinite;
+}
+
+/* subtle dot grid background */
+.grid-backdrop {
+  background-image: radial-gradient(var(--color-border) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+}
+
+/* fade + rise animation for streamed steps */
+@keyframes step-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.step-in {
+  animation: step-in 0.35s ease-out both;
 }
