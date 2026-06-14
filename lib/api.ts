@@ -42,6 +42,33 @@ export async function getAgentProfile(idOrAddress: string): Promise<AgentProfile
   if (!res.ok) throw new Error("Could not load agent");
   return res.json();
 }
+export interface AgentTaskResult {
+  response: string;
+  tool_calls_made: Array<{
+    tool: string;
+    parameters: Record<string, any>;
+    result: any;
+    timestamp: string;
+  }>;
+  iterations: number;
+  model: string;
+  tools_used: string[];
+}
+
+export async function runAgentTask(
+  task: string,
+  signal?: AbortSignal
+): Promise<AgentTaskResult> {
+  const res = await fetch(`${API_BASE_URL}/agent/task`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task, stream: false }),
+    signal,
+  });
+
+  if (!res.ok) throw new Error("TrustGuard couldn't process that request.");
+  return res.json();
+}
 
 export async function registerApiKey(params: {
   label: string;
