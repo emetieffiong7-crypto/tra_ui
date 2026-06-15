@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { API_BASE_URL } from "@/lib/api";
+import { ENDPOINTS } from "@/lib/api-docs";
+import { EndpointDoc } from "@/components/endpoint-doc";
 
 type Mode = "developer" | "agent";
 
@@ -79,7 +82,7 @@ export default function DevelopersPage() {
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent/50"
-                  placeholder="e.g. Amphiz"
+                  placeholder="e.g. John Doe - AgentZ"
                 />
               </div>
               <div>
@@ -131,6 +134,32 @@ export default function DevelopersPage() {
           </button>
         </form>
       )}
+
+      <div className="mt-14">
+        <h2 className="text-xl font-semibold">API reference</h2>
+        <p className="mt-1 text-text-dim">
+          Everything below works with or without a key — a key just raises your limits and
+          unlocks onchain actions.
+        </p>
+
+        <div className="mt-4 space-y-2">
+          {ENDPOINTS.map((endpoint) => (
+            <EndpointDoc key={endpoint.method + endpoint.path} endpoint={endpoint} />
+          ))}
+        </div>
+
+        <p className="mt-4 text-sm text-text-dim">
+          Full interactive reference at{" "}
+          <a
+            href={`${API_BASE_URL}/docs`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent hover:underline"
+          >
+            {API_BASE_URL}/docs
+          </a>
+        </p>
+      </div>
     </div>
   );
 }

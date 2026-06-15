@@ -81,3 +81,15 @@ export type StreamEvent =
       note?: string;
     }
   | { type: "error"; error: string };
+
+export interface ActivityItem {
+  agent_id: number;
+  agent_name: string | null;
+  trust_score: number | null;
+  passed: boolean;
+  evidence: string;
+  response_time_ms: number | null;
+  posted_onchain: boolean;
+  tx_hash: string | null;
+  probed_at: string | null;
+}

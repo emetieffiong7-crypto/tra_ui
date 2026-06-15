@@ -1,4 +1,4 @@
-import { AgentProfile, DiscoveryResponse, StreamEvent } from "./types";
+import { AgentProfile, DiscoveryResponse, StreamEvent, ActivityItem } from "./types";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!!;
 console.log("API_BASE_URL:", API_BASE_URL);
@@ -56,20 +56,17 @@ export interface AgentTaskResult {
   tools_used: string[];
 }
 
-// export async function runAgentTask(
-//   task: string,
-//   signal?: AbortSignal
-// ): Promise<AgentTaskResult> {
-//   const res = await fetch(`${API_BASE_URL}/agent/task`, {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ task, stream: false }),
-//     signal,
-//   });
 
-//   if (!res.ok) throw new Error("TrustGuard couldn't process that request.");
-//   return res.json();
-// }
+export async function getRecentActivity(
+  limit = 20
+): Promise<{ activity: ActivityItem[]; total: number }> {
+  const res = await fetch(`${API_BASE_URL}/discover/activity?limit=${limit}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Could not load activity");
+  return res.json();
+}
+
 export async function runAgentTask(task: string, signal?: AbortSignal): Promise<AgentTaskResult> {
   const res = await fetch(`${API_BASE_URL}/agent/task`, {
     method: "POST",
