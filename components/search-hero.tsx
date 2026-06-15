@@ -1,9 +1,8 @@
 // "use client";
 
-// import { useState, useRef } from "react";
-// import { streamAgentTask } from "@/lib/api";
-// import { StreamEvent } from "@/lib/types";
-// import { StreamingAnswer } from "./streaming-answer";
+// import { useEffect, useRef, useState } from "react";
+// import { runAgentTask, AgentTaskResult } from "@/lib/api";
+// import { AnswerResult } from "./answer-result";
 // import { SearchIcon, ArrowRightIcon } from "./icons";
 
 // const EXAMPLES = [
@@ -13,38 +12,51 @@
 //   "Search for an agent called Soma",
 // ];
 
+// const LOADING_MESSAGES = [
+//   "Searching the agent registry…",
+//   "Checking trust scores…",
+//   "Looking at verification status…",
+//   "Putting together an answer…",
+// ];
+
 // export function SearchHero() {
 //   const [query, setQuery] = useState("");
-//   const [events, setEvents] = useState<StreamEvent[]>([]);
-//   const [isStreaming, setIsStreaming] = useState(false);
+//   const [result, setResult] = useState<AgentTaskResult | null>(null);
+//   const [loading, setLoading] = useState(false);
+//   const [loadingStep, setLoadingStep] = useState(0);
+//   const [error, setError] = useState("");
 //   const abortRef = useRef<AbortController | null>(null);
 
+//   useEffect(() => {
+//     if (!loading) return;
+//     setLoadingStep(0);
+//     const interval = setInterval(() => {
+//       setLoadingStep((s) => (s + 1) % LOADING_MESSAGES.length);
+//     }, 3500);
+//     return () => clearInterval(interval);
+//   }, [loading]);
+
 //   async function runSearch(task: string) {
-//     if (!task.trim() || isStreaming) return;
+//     if (!task.trim() || loading) return;
 
 //     abortRef.current?.abort();
 //     const controller = new AbortController();
 //     abortRef.current = controller;
 
 //     setQuery(task);
-//     setEvents([]);
-//     setIsStreaming(true);
+//     setResult(null);
+//     setError("");
+//     setLoading(true);
 
 //     try {
-//       await streamAgentTask(
-//         task,
-//         (event) => setEvents((prev) => [...prev, event]),
-//         controller.signal
-//       );
-//     } catch (err) {
+//       const data = await runAgentTask(task, controller.signal);
+//       setResult(data);
+//     } catch {
 //       if (!controller.signal.aborted) {
-//         setEvents((prev) => [
-//           ...prev,
-//           { type: "error", error: "Could not reach TrustGuard. Please try again." },
-//         ]);
+//         setError("Could not reach TrustGuard. Please try again.");
 //       }
 //     } finally {
-//       setIsStreaming(false);
+//       setLoading(false);
 //     }
 //   }
 
@@ -58,7 +70,7 @@
 //           Ask about any agent on Celo
 //         </h1>
 //         <p className="mt-4 text-text-dim sm:text-lg">
-//           TrustGuard checks reputation, verification, and live activity —
+//           TrustGuard checks reputation, verification and live activity —
 //           then tells you what it finds.
 //         </p>
 
@@ -78,7 +90,7 @@
 //           />
 //           <button
 //             type="submit"
-//             disabled={isStreaming || !query.trim()}
+//             disabled={loading || !query.trim()}
 //             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-bg transition-opacity disabled:opacity-40"
 //             aria-label="Ask TrustGuard"
 //           >
@@ -91,7 +103,7 @@
 //             <button
 //               key={example}
 //               onClick={() => runSearch(example)}
-//               disabled={isStreaming}
+//               disabled={loading}
 //               className="rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-text-dim transition-colors hover:border-accent/40 hover:text-text disabled:opacity-40"
 //             >
 //               {example}
@@ -99,7 +111,20 @@
 //           ))}
 //         </div>
 
-//         {events.length > 0 && <StreamingAnswer events={events} isStreaming={isStreaming} />}
+//         {loading && (
+//           <div className="mt-10 flex flex-col items-center gap-3 text-text-dim">
+//             <span className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-accent" />
+//             <p className="text-sm">{LOADING_MESSAGES[loadingStep]}</p>
+//           </div>
+//         )}
+
+//         {error && (
+//           <div className="mt-8 rounded-md border border-high/30 bg-high/10 px-4 py-3 text-sm text-high">
+//             {error}
+//           </div>
+//         )}
+
+//         {result && <AnswerResult result={result} />}
 //       </div>
 //     </section>
 //   );
@@ -107,7 +132,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { runAgentTask, AgentTaskResult } from "@/lib/api";
 import { AnswerResult } from "./answer-result";
 import { SearchIcon, ArrowRightIcon } from "./icons";
@@ -119,29 +144,12 @@ const EXAMPLES = [
   "Search for an agent called Soma",
 ];
 
-const LOADING_MESSAGES = [
-  "Searching the agent registry…",
-  "Checking trust scores…",
-  "Looking at verification status…",
-  "Putting together an answer…",
-];
-
 export function SearchHero() {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<AgentTaskResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState("");
   const abortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    if (!loading) return;
-    setLoadingStep(0);
-    const interval = setInterval(() => {
-      setLoadingStep((s) => (s + 1) % LOADING_MESSAGES.length);
-    }, 3500);
-    return () => clearInterval(interval);
-  }, [loading]);
 
   async function runSearch(task: string) {
     if (!task.trim() || loading) return;
@@ -159,9 +167,8 @@ export function SearchHero() {
       const data = await runAgentTask(task, controller.signal);
       setResult(data);
     } catch {
-      if (!controller.signal.aborted) {
+      if (!controller.signal.aborted)
         setError("Could not reach TrustGuard. Please try again.");
-      }
     } finally {
       setLoading(false);
     }
@@ -177,15 +184,12 @@ export function SearchHero() {
           Ask about any agent on Celo
         </h1>
         <p className="mt-4 text-text-dim sm:text-lg">
-          TrustGuard checks reputation, verification, and live activity —
+          TrustGuard checks reputation, verification and live activity —
           then tells you what it finds.
         </p>
 
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            runSearch(query);
-          }}
+          onSubmit={(e) => { e.preventDefault(); runSearch(query); }}
           className="mx-auto mt-8 flex max-w-xl items-center gap-2 rounded-full border border-border bg-surface p-2 pl-5 shadow-lg shadow-black/20 transition-shadow focus-within:border-accent/60 focus-within:shadow-accent/10"
         >
           <SearchIcon className="h-5 w-5 shrink-0 text-text-dim" />
@@ -199,21 +203,18 @@ export function SearchHero() {
             type="submit"
             disabled={loading || !query.trim()}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-bg transition-opacity disabled:opacity-40"
-            aria-label="Ask TrustGuard"
           >
-            <ArrowRightIcon className="h-4 w-4" />
+            {loading
+              ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-bg/40 border-t-bg" />
+              : <ArrowRightIcon className="h-4 w-4" />}
           </button>
         </form>
 
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-          {EXAMPLES.map((example) => (
-            <button
-              key={example}
-              onClick={() => runSearch(example)}
-              disabled={loading}
-              className="rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-text-dim transition-colors hover:border-accent/40 hover:text-text disabled:opacity-40"
-            >
-              {example}
+          {EXAMPLES.map((ex) => (
+            <button key={ex} onClick={() => runSearch(ex)} disabled={loading}
+              className="rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-text-dim transition-colors hover:border-accent/40 hover:text-text disabled:opacity-40">
+              {ex}
             </button>
           ))}
         </div>
@@ -221,7 +222,7 @@ export function SearchHero() {
         {loading && (
           <div className="mt-10 flex flex-col items-center gap-3 text-text-dim">
             <span className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-accent" />
-            <p className="text-sm">{LOADING_MESSAGES[loadingStep]}</p>
+            <p className="text-sm animate-pulse">Checking the agent registry…</p>
           </div>
         )}
 

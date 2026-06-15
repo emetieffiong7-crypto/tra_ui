@@ -1,6 +1,7 @@
 import { AgentProfile, DiscoveryResponse, StreamEvent } from "./types";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!!;
+console.log("API_BASE_URL:", API_BASE_URL);
 
 export async function discoverAgents(params: {
   capability?: string;
@@ -55,19 +56,34 @@ export interface AgentTaskResult {
   tools_used: string[];
 }
 
-export async function runAgentTask(
-  task: string,
-  signal?: AbortSignal
-): Promise<AgentTaskResult> {
+// export async function runAgentTask(
+//   task: string,
+//   signal?: AbortSignal
+// ): Promise<AgentTaskResult> {
+//   const res = await fetch(`${API_BASE_URL}/agent/task`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ task, stream: false }),
+//     signal,
+//   });
+
+//   if (!res.ok) throw new Error("TrustGuard couldn't process that request.");
+//   return res.json();
+// }
+export async function runAgentTask(task: string, signal?: AbortSignal): Promise<AgentTaskResult> {
   const res = await fetch(`${API_BASE_URL}/agent/task`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ task, stream: false }),
+    // body: JSON.stringify({ task, stream: false }),
+    body: JSON.stringify({ task, stream: false, model: "llama-3.3-70b-versatile" }),
     signal,
   });
 
+  const raw = await res.text();
+  console.log("RAW RESPONSE:", raw); // add this
+  
   if (!res.ok) throw new Error("TrustGuard couldn't process that request.");
-  return res.json();
+  return JSON.parse(raw);
 }
 
 export async function registerApiKey(params: {
@@ -99,7 +115,7 @@ export async function streamAgentTask(
   const res = await fetch(`${API_BASE_URL}/agent/task`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ task, stream: true }),
+    body: JSON.stringify({ task, stream: true, model: "llama-3.3-70b-versatile" }),
     signal,
   });
 
